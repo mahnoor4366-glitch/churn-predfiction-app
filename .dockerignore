@@ -1,0 +1,4 @@
+kestrel.db
+artifacts/*
+__pycache__
+.git

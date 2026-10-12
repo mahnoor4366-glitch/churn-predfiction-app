@@ -1,0 +1,28 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:-Kestrel_Pass123}
+    ports: ["1433:1433"]
+    volumes: ["sqldata:/var/opt/mssql"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      retries: 20
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: mssql+pyodbc://sa:${SA_PASSWORD:-Kestrel_Pass123}@db:1433/kestrel?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@kestrel.io}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+    volumes:
+      - ./data:/srv/data
+      - artifacts:/srv/artifacts
+    ports: ["8000:8000"]
+volumes:
+  sqldata: {}
+  artifacts: {}
