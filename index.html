@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Agent Interface</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #chat-container { width: 400px; height: 500px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        #messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 80%; padding: 10px 14px; border-radius: 15px; font-size: 14px; line-height: 1.4; }
+        .user { background: #007bff; color: white; align-self: flex-end; }
+        .bot { background: #e9ecef; color: #333; align-self: flex-start; }
+        #input-area { display: flex; border-top: 1px solid #ddd; padding: 10px; }
+        #user-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; outline: none; }
+        #send-btn { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; margin-left: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="messages"></div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Ask AI something..." />
+        <button id="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    // Generate a fixed or unique Session ID for conversation history memory
+    const sessionId = "user-session-" + Math.floor(Math.random() * 10000);
+
+    async function sendMessage() {
+        const inputField = document.getElementById('user-input');
+        const messageText = inputField.value.trim();
+        if (!messageText) return;
+
+        // Render User Message
+        appendMessage(messageText, 'user');
+        inputField.value = '';
+
+        try {
+            // Send payload to your n8n Webhook
+            const response = await fetch('https://deep-papers-win.loca.lt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId: sessionId,
+                    message: messageText
+                })
+            });
+
+            const data = await response.json();
+            
+            // Render Bot Response (adjust output key based on your Respond to Webhook node output)
+            const botReply = data.output || data.text || JSON.stringify(data);
+            appendMessage(botReply, 'bot');
+        } catch (error) {
+            appendMessage('Error connecting to backend.', 'bot');
+            console.error(error);
+        }
+    }
+
+    function appendMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', sender);
+        msgDiv.textContent = text;
+        const container = document.getElementById('messages');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+</script>
+</body>
+</html>
